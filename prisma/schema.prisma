@@ -1,0 +1,1612 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id        String            @id @default(uuid())
+  name      String
+  image     String
+  slug      String?           @unique
+  parentId  String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  approved  Boolean           @default(true)
+  parent    Category?         @relation("CategoryToSubcategories", fields: [parentId], references: [id])
+  children  Category[]        @relation("CategoryToSubcategories")
+  products  ProductCategory[]
+}
+
+model Reply {
+  id       String  @id @default(uuid())
+  reply    String
+  userId   String  @unique
+  reviewId String  @unique
+  reviews  Reviews @relation(fields: [reviewId], references: [id])
+  user     User    @relation(fields: [userId], references: [id])
+}
+
+model Reviews {
+  id           String   @id @default(uuid())
+  review       String
+  rating       String
+  userId       String
+  productId    String
+  images       String[] @default([])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  sellerRating String
+  reply        Reply?
+  product      Product  @relation(fields: [productId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model Material {
+  id       String    @id @default(uuid())
+  name     String
+  images   String?
+  products Product[]
+}
+
+model Questions {
+  id        String    @id @default(uuid())
+  question  String
+  userId    String
+  productId String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  answers   Answers[]
+  product   Product   @relation(fields: [productId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model Answers {
+  id         String    @id @default(uuid())
+  reply      String
+  vendorId   String
+  questionId String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  questions  Questions @relation(fields: [questionId], references: [id])
+  vendor     Vendors   @relation(fields: [vendorId], references: [id])
+}
+
+model Product {
+  id                    String                 @id @default(uuid())
+  title                 String
+  descriptiveTitle      String
+  totalSold             Int                    @default(0)
+  totalReviews          Int                    @default(0)
+  images                String[]
+  description           String
+  approved              Boolean
+  totalSales            Int                    @default(0)
+  quantity              Int?                   @default(0)
+  featured              Boolean                @default(false)
+  manufacturer          String?
+  packaging             String?
+  materialId            String?
+  type                  String?
+  vasoconstrictor       String?
+  sds                   String?
+  style                 String?
+  sterility             String?
+  properties            String?
+  construction          String?
+  dilutionRatio         String?
+  vendorId              String
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  disapprovalMsg        String?
+  height                String?
+  intoWishList          Boolean?
+  length                String?
+  rating                String?
+  video                 String?
+  weight                String?
+  width                 String?
+  status                productStatus          @default(PENDING)
+  bannerImage           String?
+  reason                String?
+  scent                 String?
+  viscosity             String?
+  fluidResistance       String?
+  filtrationRate        String?
+  brand                 String?
+  isLicenseRequired     Boolean                @default(false)
+  deliveryOptions       Json?
+  isActive              Boolean                @default(true)
+  shippingMethod        ShippingMethod         @default(UPS)
+  flatRate              Float?                 @default(0)
+  inventoryType         ProductInventoryType   @default(CONSUMABLE)
+  inventoryTypeId       String?
+  slug                  String                 @unique
+  inventoryItems        Inventory[]
+  notifications         Notification[]
+  inventoryTypeRelation Inventory_type?        @relation(fields: [inventoryTypeId], references: [id])
+  material              Material?              @relation(fields: [materialId], references: [id])
+  vendor                Vendors                @relation(fields: [vendorId], references: [id])
+  categories            ProductCategory[]
+  variants              ProductVariant[]
+  purchaseOrderDetails  PurchaseOrderDetail[]
+  purchaseReturnDetails PurchaseReturnDetail[]
+  questions             Questions[]
+  reviews               Reviews[]
+  transferDetails       TransferDetail[]
+  promotions            Promotion[]            @relation("PromotionProducts")
+  bundleItems           BundleItem[]
+}
+
+model Inventory_type {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  isActive  Boolean   @default(true)
+  products  Product[]
+}
+
+model ProductCategory {
+  productId  String
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id])
+
+  @@id([productId, categoryId])
+}
+
+model Promotion {
+  id                      String               @id @default(uuid())
+  name                    String
+  code                    String?              @unique
+  type                    PromotionType
+  minPurchaseValue        Float?
+  freeShippingValue       Float?
+  maxOrdersPerUser        Int?
+  appliesToAllProducts    Boolean?             @default(true)
+  selectedProductIds      String[]
+  capMinValue             Float?
+  capMaxValue             Float?
+  eligibleCustomers       EligibleCustomerType
+  customerTypes           CustomerType[]
+  highSpendLimit          Float?
+  eligibleCountries       String[]
+  eligibleStates          String[]
+  eligibleCities          String[]
+  deliveryOptions         DeliveryOption[]
+  durationType            DurationType
+  startDate               DateTime?
+  endDate                 DateTime?
+  status                  Boolean              @default(true)
+  buyQuantity             Int?
+  buyProductIds           String[]
+  getQuantity             Int?
+  getProductIds           String[]
+  spendAmount             Float?
+  spendFixedDiscount      Float?
+  spendPercentageDiscount Float?
+  selectedCategoryIds     String[]             @default([])
+  totalUsageLimit         Int?
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  vendorId                String
+  bundleDeals             BundleDeal[]
+  orderPromotions         OrderPromotion[]
+  usages                  PromotionUsage[]
+  vendor                  Vendors              @relation("PromotionVendor", fields: [vendorId], references: [id])
+  products                Product[]            @relation("PromotionProducts")
+}
+
+model PromotionUsage {
+  id          String    @id @default(uuid())
+  promotionId String
+  userId      String
+  orderId     String
+  discountAmt Float
+  usedAt      DateTime  @default(now())
+
+  promotion   Promotion @relation(fields: [promotionId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+  order       Orders    @relation(fields: [orderId], references: [id])
+
+  @@index([promotionId])
+  @@index([userId])
+}
+
+// DEPRECATED — replaced by BundleProduct system. Do not use for new features.
+model BundleDeal {
+  id                       String    @id @default(uuid())
+  promotionId              String
+  bundleQuantity           Int
+  bundlePercentageDiscount Float?
+  bundleFixedDiscount      Float?
+  promotion                Promotion @relation(fields: [promotionId], references: [id])
+}
+
+// ─────────────────────────────────────────────
+// BUNDLE DEALS SYSTEM — New independent models
+// ─────────────────────────────────────────────
+
+model BundleProduct {
+  id                 String            @id @default(uuid())
+  title              String
+  slug               String            @unique
+  description        String?
+  images             String[]          @default([])
+  bundlePrice        Float
+  originalPrice      Float
+  discountPercentage Float
+  label              String?
+  isActive           Boolean           @default(false)
+  status             BundleStatus      @default(DRAFT)
+  disapprovalMsg     String?
+  vendorId           String
+  approvedById       String?
+  approvedAt         DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  // Discount settings
+  discountType       String?
+  discountValue      Float?
+  // Applied-to settings
+  appliedTo          String?
+  productIds         String[]          @default([])
+  categoryIds        String[]          @default([])
+  minQuantity        Int?
+  // Duration settings
+  durationType        String?
+  startDate           DateTime?
+  endDate             DateTime?
+  // Purchase limit settings
+  maxPurchasesPerUser Int?
+  // Delivery charges
+  deliveryCharges     Float             @default(0)
+  vendor              Vendors           @relation(fields: [vendorId], references: [id])
+  approvedBy          Admin?            @relation(fields: [approvedById], references: [id])
+  items               BundleItem[]
+  cartItems           BundleCartItem[]
+  orderItems          BundleOrderItem[]
+  usages              BundleUsage[]
+
+  @@index([vendorId])
+  @@index([status])
+  @@index([isActive])
+}
+
+model BundleItem {
+  id              String          @id @default(uuid())
+  bundleId        String
+  productId       String
+  variantId       String?
+  quantity        Int
+  priceAtCreation Float
+  bundle          BundleProduct   @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  product         Product         @relation(fields: [productId], references: [id])
+  variant         ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@index([bundleId])
+}
+
+model BundleCartItem {
+  cartId        String
+  bundleId      String
+  quantity      Int
+  priceAtAdding Float
+  cart          Cart          @relation(fields: [cartId], references: [id])
+  bundle        BundleProduct @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+
+  @@id([cartId, bundleId])
+}
+
+model BundleOrderItem {
+  orderId         String
+  bundleId        String
+  quantity        Int
+  priceAtPurchase Float
+  vendorId        String
+  status          OrderStatus
+  productSnapshot Json          @default("{}")
+  order           Orders        @relation(fields: [orderId], references: [id])
+  bundle          BundleProduct @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  vendor          Vendors       @relation(fields: [vendorId], references: [id])
+
+  @@id([orderId, bundleId])
+}
+
+model BundleUsage {
+  id          String        @id @default(uuid())
+  bundleId    String
+  userId      String
+  orderId     String
+  purchasedAt DateTime      @default(now())
+  bundle      BundleProduct @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id])
+  order       Orders        @relation(fields: [orderId], references: [id])
+
+  @@index([bundleId])
+  @@index([userId])
+  @@index([bundleId, userId])
+}
+
+model ProductVariant {
+  id                  String               @id @default(uuid())
+  color               String?
+  size                String?
+  images              String[]             @default([])
+  quantity            Int                  @default(0)
+  sku                 String?
+  barCode             String?
+  price               Float
+  discount            Int?
+  discountedPrice     Float?
+  endingDate          DateTime?
+  productId           String
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  AutoOrder           AutoOrder[]
+  cancelOrderVariants CancelOrderVariant[]
+  cartItems           CartItem[]
+  orders              OrderItems[]
+  product             Product              @relation(fields: [productId], references: [id])
+  returnOrderVariants ReturnOrderVariant[]
+  attributes          VariantAttribute[]
+  wishlistItems       WishlistItem[]
+  bundleItems         BundleItem[]
+}
+
+model VariantAttribute {
+  id        String         @id @default(uuid())
+  variantId String
+  name      String
+  value     String
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+}
+
+model Address {
+  id            String      @id @default(uuid())
+  city          String
+  state         String
+  country       String?
+  zipCode       String
+  userId        String?
+  building      String?
+  createdAt     DateTime    @default(now())
+  extension     String?
+  isDefault     Boolean?    @default(false)
+  officeName    String?
+  phone         String?
+  streetAddress String
+  updatedAt     DateTime    @updatedAt
+  vendorId      String?     @unique
+  user          User?       @relation(fields: [userId], references: [id])
+  vendor        Vendors?    @relation(fields: [vendorId], references: [id])
+  AutoOrder     AutoOrder[]
+  order         Orders[]
+}
+
+model SuperAdmin {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  phone         String
+  firstName     String
+  lastName      String
+  role          Role           @default(SUPER_ADMIN)
+  password      String
+  resetToken    String?
+  resetTokenExp DateTime?
+  profile       String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  notifications Notification[]
+}
+
+model Admin {
+  id               String            @id @default(uuid())
+  firstName        String
+  lastName         String
+  email            String            @unique
+  phone            String
+  role             Role              @default(ADMIN)
+  password         String
+  resetToken       String?
+  resetTokenExp    DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  address          String
+  dateOfBirth      DateTime?
+  status           Status            @default(ACTIVE)
+  reason           String?
+  profile          String?
+  adminRoles       AdminRole[]
+  blogPosts        BlogPost[]
+  emergencyContact EmergencyContact?
+  notifications    Notification[]
+  vendors          Vendors[]
+  approvedBundles  BundleProduct[]
+}
+
+model EmergencyContact {
+  id        String @id @default(uuid())
+  firstName String
+  lastName  String
+  contactNo String
+  relation  String
+  adminId   String @unique
+  admin     Admin  @relation(fields: [adminId], references: [id])
+}
+
+model AdminRole {
+  id         String  @id @default(uuid())
+  management String
+  view       Boolean @default(false)
+  edit       Boolean @default(false)
+  add        Boolean @default(false)
+  delete     Boolean @default(false)
+  adminId    String
+  admin      Admin   @relation(fields: [adminId], references: [id])
+}
+
+model Vendors {
+  id                 String              @id @default(uuid())
+  firstName          String
+  lastName           String
+  adminId            String?
+  email              String              @unique
+  phone              String
+  isApproved         Boolean?            @default(false)
+  password           String
+  role               Role                @default(VENDOR)
+  resetToken         String?
+  resetTokenExp      DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  autherizeDist      Boolean?            @default(false)
+  businessType       VendorBusinessType?
+  defaultUps         Boolean?            @default(false)
+  delieryId          String?
+  ownProductManf     Boolean?            @default(false)
+  webisteName        String?
+  websiteUrl         String?
+  workPhone          String?
+  status             vendorStatus        @default(PENDING)
+  dateOfBirth        String?
+  reason             String?
+  returnPolicy       Boolean?            @default(false)
+  profile            String?
+  lastSeen           DateTime?
+  link               String?
+  lastStatusNotifyAt DateTime?
+  address            Address?
+  answer             Answers[]
+  blogPosts          BlogPost[]
+  chats              Chat[]              @relation("VendorChats")
+  commission         Commission?
+  notifications      Notification[]
+  orders             OrderItems[]
+  products           Product[]
+  promotion          Promotion[]         @relation("PromotionVendor")
+  transactions       Transaction[]
+  vendorDebts        VendorDebts[]
+  transfers          VendorTransfers[]
+  ups                VendorUPS[]
+  admin              Admin?              @relation(fields: [adminId], references: [id])
+  connectAccount     connectAccount?
+  bundles            BundleProduct[]
+  bundleOrderItems   BundleOrderItem[]
+}
+
+model Commission {
+  id                   String         @id @default(uuid())
+  vendorId             String         @unique
+  commissionPercentage Float          @default(5)
+  payOnStatus          PayStatus      @default(DELIVERED)
+  calculationMethod    CommissionType @default(WHOLE_ORDER)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  vendor               Vendors        @relation(fields: [vendorId], references: [id])
+}
+
+model VendorTransfers {
+  id                             String                @id @default(uuid())
+  transferId                     String?
+  orderId                        String
+  vendorId                       String
+  saleItemPrice                  Float
+  tax                            Float
+  shippingCost                   Float
+  total                          Float
+  transactionType                TransactionType       @default(SALE)
+  vendorSalePriceAfterCommission Float
+  vendorTax                      Float
+  vendorShipping                 Float
+  vendorTotal                    Float
+  platformCommission             Float
+  platformTax                    Float
+  platformShipping               Float
+  platformStripeFee              Float
+  platformTotal                  Float
+  shipment                       String
+  pendingAmount                  Float?
+  status                         VendorTransfersStatus @default(PENDING)
+  createdAt                      DateTime              @default(now())
+  updatedAt                      DateTime              @updatedAt
+  order                          Orders                @relation(fields: [orderId], references: [id])
+  vendor                         Vendors               @relation(fields: [vendorId], references: [id])
+
+  @@unique([vendorId, orderId])
+}
+
+model VendorDebts {
+  id        String   @id @default(uuid())
+  vendorId  String
+  orderId   String
+  amount    Float
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  order     Orders   @relation(fields: [orderId], references: [id])
+  vendor    Vendors  @relation(fields: [vendorId], references: [id])
+
+  @@unique([vendorId, orderId], name: "vendorId_orderId_unique")
+}
+
+model VendorUPS {
+  id          String   @id @default(uuid())
+  accountNo   String?
+  email       String?
+  serviceName String?
+  websiteUrl  String?
+  phoneNo     String?
+  vendorId    String?  @unique
+  vendor      Vendors? @relation(fields: [vendorId], references: [id])
+  accessToken String?
+  refreshToken String?
+  accessTokenExpiresAt DateTime?
+  refreshTokenExpiresAt DateTime?
+  isActive    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+//model CourierService {
+ // id        String   @id @default(uuid())
+//  vendorId  String   
+ // vendor    Vendors  @relation(fields: [vendorId], references: [id])
+//  name      String
+ // websiteUrl     String
+//  phoneNo   String
+ // createdAt DateTime @default(now())
+ // updatedAt DateTime @updatedAt
+//}
+
+model connectAccount {
+  id                String  @id @default(uuid())
+  businessType      String
+  country           String
+  businessName      String?
+  websiteURL        String?
+  email             String
+  MCC               String?
+  phone             String?
+  firstName         String
+  lastName          String
+  dateOfBirth       String
+  SNN               String?
+  ENN               String?
+  streetAddress     String?
+  building          String?
+  city              String?
+  state             String?
+  zipCode           String?
+  accountHolderName String
+  accountNumber     String
+  routingNumber     String
+  vendorId          String  @unique
+  vendor            Vendors @relation(fields: [vendorId], references: [id])
+}
+
+model User {
+  id                     String                  @id @default(uuid())
+  email                  String                  @unique
+  firstName              String?
+  lastName               String?
+  password               String
+  businessType           BussinessType
+  healthCareBusinessType HealthCareBusinessType?
+  dentalOfficeSpeciality Speciality[]            @default([])
+  noOfLocations          Int?
+  doctorFirstName        String?
+  doctorLastName         String?
+  officeContactFirstName String?
+  officeContactLastName  String?
+  contactJobTitle        String?
+  managerFirstName       String?
+  managerLastName        String?
+  resetToken             String?
+  resetTokenExp          DateTime?
+  role                   Role                    @default(USER)
+  isVerfied              Boolean                 @default(false)
+  isSubscribed           Boolean                 @default(false)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  officePhoneNo          String?
+  stripeCustomerId       String?
+  profile                String?
+  lastSeen               DateTime?
+  address                Address[]
+  AutoOrder              AutoOrder[]
+  cart                   Cart?
+  chats                  Chat[]                  @relation("UserChats")
+  getInTouch             GetInTouch[]
+  license                LicenseList[]
+  notifications          Notification[]
+  orders                 Orders[]
+  Questions              Questions[]
+  replies                Reply?
+  Review                 Reviews[]
+  transactions           Transaction[]
+  wishlist               WishList?
+  promotionUsages        PromotionUsage[]
+  bundleUsages           BundleUsage[]
+}
+
+model Chat {
+  id        String    @id @default(uuid())
+  userId    String
+  vendorId  String
+  createdAt DateTime  @default(now())
+  user      User      @relation("UserChats", fields: [userId], references: [id])
+  vendor    Vendors   @relation("VendorChats", fields: [vendorId], references: [id])
+  messages  Message[]
+}
+
+model Message {
+  id        String    @id @default(uuid())
+  chatId    String
+  senderId  String
+  text      String
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  chat      Chat      @relation(fields: [chatId], references: [id])
+}
+
+model LicenseList {
+  id             String      @id @default(uuid())
+  licenseNumber  String
+  licenseType    String
+  expirationDate DateTime
+  userId         String?
+  isDefault      Boolean?    @default(false)
+  state          String?
+  AutoOrder      AutoOrder[]
+  user           User?       @relation(fields: [userId], references: [id])
+  order          Orders[]
+}
+
+model Notification {
+  id           String      @id @default(uuid())
+  title        String
+  message      String
+  userId       String?
+  vendorId     String?
+  adminId      String?
+  superAdminId String?
+  orderId      String?
+  productId    String?
+  isRead       Boolean     @default(false)
+  chatId       String?
+  isMessage    Boolean     @default(false)
+  isOrder      Boolean     @default(false)
+  isProduct    Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  admin        Admin?      @relation(fields: [adminId], references: [id])
+  order        Orders?     @relation(fields: [orderId], references: [id])
+  product      Product?    @relation(fields: [productId], references: [id])
+  superAdmin   SuperAdmin? @relation(fields: [superAdminId], references: [id])
+  user         User?       @relation(fields: [userId], references: [id])
+  vendor       Vendors?    @relation(fields: [vendorId], references: [id])
+}
+
+model WishList {
+  id        String         @id @default(uuid())
+  userId    String         @unique
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  user      User           @relation(fields: [userId], references: [id])
+  items     WishlistItem[]
+}
+
+model WishlistItem {
+  wishlistId String
+  quantity   Int
+  variantId  String
+  variant    ProductVariant @relation(fields: [variantId], references: [id])
+  cart       WishList       @relation(fields: [wishlistId], references: [id])
+
+  @@id([wishlistId, variantId])
+}
+
+model Cart {
+  id          String           @id @default(uuid())
+  userId      String           @unique
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  user        User             @relation(fields: [userId], references: [id])
+  items       CartItem[]
+  bundleItems BundleCartItem[]
+}
+
+model Orders {
+  id                    String            @id @default(uuid())
+  orderNumber           String?           @unique
+  userId                String
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  addressId             String?
+  cardNumber            String?
+  discount              String?
+  expiryDate            String?
+  isCanceled            Boolean?
+  licenseId             String?
+  price                 Float
+  status                OrderStatus?      @default(PLACED)
+  stripePaymentIntentId String?
+  tax                   Float?
+  trackingNo            Json?
+  deliveryOptions       Json?
+  shippingTax           Float?
+  autoOrderId           String?
+  userSnapshot          Json              @default("{}")
+  billingDetails        Json              @default("[]")
+  promotionIds          String[]
+  promotionDiscount     Json?
+  cancelOrder           CancelOrder?      @relation("OrderToCancelOrder")
+  Notification          Notification[]
+  products              OrderItems[]
+  bundleItems           BundleOrderItem[]
+  orderPromotions       OrderPromotion[]
+  address               Address?          @relation(fields: [addressId], references: [id])
+  AutoOrder             AutoOrder?        @relation(fields: [autoOrderId], references: [id])
+  license               LicenseList?      @relation(fields: [licenseId], references: [id])
+  user                  User              @relation(fields: [userId], references: [id])
+  returnOrder           ReturnOrder?      @relation("OrderToReturnOrder")
+  transactions          Transaction[]
+  vendorDebts           VendorDebts[]
+  transfers             VendorTransfers[]
+  promotionUsages       PromotionUsage[]
+  bundleUsages          BundleUsage[]
+}
+
+model OrderItems {
+  orderId         String
+  quantity        Int
+  status          OrderStatus
+  variantId       String
+  isFree          Boolean?       @default(false)
+  freeQuantity    Int?           @default(0)
+  vendorId        String
+  trackingNo      String?
+  trackStatus     Json           @default("[]")
+  productSnapshot Json           @default("[]")
+  order           Orders         @relation(fields: [orderId], references: [id])
+  variant         ProductVariant @relation(fields: [variantId], references: [id])
+  vendor          Vendors        @relation(fields: [vendorId], references: [id])
+
+  @@id([orderId, variantId])
+}
+
+model OrderPromotion {
+  orderId     String
+  promotionId String
+  order       Orders    @relation(fields: [orderId], references: [id])
+  promotion   Promotion @relation(fields: [promotionId], references: [id])
+
+  @@id([orderId, promotionId])
+}
+
+model Transaction {
+  id                    String            @id @default(uuid())
+  stripePaymentIntentId String
+  customerId            String
+  vendorId              String
+  subtotalAmount        Float
+  taxAmount             Float
+  totalAmount           Float
+  currency              String            @default("usd")
+  taxRateApplied        Float?
+  stateCollectedFor     String?
+  status                TransactionStatus
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @default(now())
+  shippingCost          Float?
+  orderId               String
+  refundAmount          Float?
+  refundReason          String?
+  capturedAt            DateTime?
+  refundedAt            DateTime?
+  metadata              Json?
+  customer              User              @relation(fields: [customerId], references: [id])
+  order                 Orders            @relation(fields: [orderId], references: [id])
+  vendor                Vendors           @relation(fields: [vendorId], references: [id])
+
+  @@index([customerId])
+  @@index([vendorId])
+  @@index([stripePaymentIntentId])
+  @@index([orderId])
+}
+
+model AutoOrder {
+  id                     String           @id @default(uuid())
+  userId                 String
+  addressId              String
+  licenseId              String
+  variantId              String
+  autoOrderFrequency     String
+  autoOrderFrequencyTime Float
+  startDate              String
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+  paymentMethodId        String?
+  address                Address          @relation(fields: [addressId], references: [id])
+  license                LicenseList      @relation(fields: [licenseId], references: [id])
+  user                   User             @relation(fields: [userId], references: [id])
+  variant                ProductVariant   @relation(fields: [variantId], references: [id])
+  products               AutoOrderItems[]
+  orders                 Orders[]
+}
+
+model AutoOrderItems {
+  id          String    @id @default(uuid())
+  autoOrderId String
+  quantity    Int
+  autoOrder   AutoOrder @relation(fields: [autoOrderId], references: [id])
+}
+
+model ReturnOrder {
+  id           String               @id @default(uuid())
+  orderId      String               @unique
+  returnStatus OrderRemarks?
+  trackingNo   String
+  deliverFrom  String
+  order        Orders               @relation("OrderToReturnOrder", fields: [orderId], references: [id])
+  variants     ReturnOrderVariant[]
+}
+
+model ReturnOrderVariant {
+  returnOrderId String
+  message       String
+  reason        String
+  variantId     String
+  returnOrder   ReturnOrder    @relation(fields: [returnOrderId], references: [id])
+  variant       ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@id([returnOrderId, variantId])
+}
+
+model CancelOrder {
+  id           String               @id @default(uuid())
+  orderId      String               @unique
+  message      String
+  reason       String
+  cancelStatus CancelOrderStatus?
+  order        Orders               @relation("OrderToCancelOrder", fields: [orderId], references: [id])
+  variants     CancelOrderVariant[]
+}
+
+model CancelOrderVariant {
+  cancelOrderId String
+  variantId     String
+  cancelOrder   CancelOrder    @relation(fields: [cancelOrderId], references: [id])
+  variant       ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@id([cancelOrderId, variantId])
+}
+
+model CartItem {
+  cartId    String
+  quantity  Int
+  variantId String
+  cart      Cart           @relation(fields: [cartId], references: [id])
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@id([cartId, variantId])
+}
+
+model GetInTouch {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model BlogCategory {
+  id          String     @id @default(uuid())
+  name        String
+  slug        String     @unique
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  posts       BlogPost[]
+}
+
+model BlogTag {
+  id        String        @id @default(uuid())
+  name      String
+  slug      String        @unique
+  createdAt DateTime      @default(now())
+  posts     BlogPostTag[]
+}
+
+model BlogPost {
+  id             String        @id @default(uuid())
+  title          String
+  slug           String        @unique
+  content        String
+  excerpt        String?
+  thumbnailUrl   String?
+  published      Boolean       @default(false)
+  publishedAt    DateTime?
+  seoTitle       String?
+  seoDescription String?
+  vendorId       String?
+  adminId        String?
+  categoryId     String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  admin          Admin?        @relation(fields: [adminId], references: [id])
+  category       BlogCategory? @relation(fields: [categoryId], references: [id])
+  vendors        Vendors?      @relation(fields: [vendorId], references: [id])
+  tags           BlogPostTag[]
+}
+
+model BlogPostTag {
+  id     String   @id @default(uuid())
+  postId String
+  tagId  String
+  post   BlogPost @relation(fields: [postId], references: [id])
+  tag    BlogTag  @relation(fields: [tagId], references: [id])
+}
+
+model ImsUser {
+  client_id            String               @id @default(uuid()) @db.Uuid
+  company_name         String
+  first_name           String
+  last_name            String
+  contact_number       String?
+  email                String               @unique
+  permanent_address    String?
+  city                 String?
+  state                String?
+  zip_code             String?
+  agree_to_terms       Boolean
+  stripe_customer_id   String?
+  created_at           DateTime             @default(now())
+  ims_role             String?
+  password             String?
+  is_system_admin      Boolean              @default(false)
+  reset_token          String?
+  reset_token_expiry   DateTime?
+  is_deleted           Boolean              @default(false)
+  deleted_at           DateTime?            @db.Timestamp(6)
+  restore_requested    Boolean              @default(false)
+  restore_request_data Json?
+  restore_requested_at DateTime?            @db.Timestamp(6)
+  sent_agreements      Agreement[]          @relation("AdminAgreements")
+  agreements           Agreement[]
+  billings             Billing[]
+  subscriptions        ClientSubscription[]
+  managed_demos        ImsUserDetail[]      @relation("AdminDetails")
+  detail               ImsUserDetail[]
+  licenses             License[]
+  offices              Office[]
+  purchases            PurchaseOrder[]
+  quotations           Quotation[]
+  shippings            Shipping[]
+  staff                Staff[]
+  auditLogs            AuditLog[]
+  loginHistory         ImsLoginHistory[]
+  userRoles            ImsUserRole[]
+  customProducts       ImsCustomProduct[]
+}
+
+model ImsLoginHistory {
+  id         String   @id @default(uuid()) @db.Uuid
+  client_id  String   @db.Uuid
+  ip_address String?
+  browser    String?
+  device     String?
+  created_at DateTime @default(now())
+  user       ImsUser  @relation(fields: [client_id], references: [client_id], onDelete: Cascade)
+
+  @@map("ims_login_history")
+}
+
+model ImsNotification {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title      String
+  message    String
+  type       String
+  is_read    Boolean   @default(false)
+  link       String?
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model ImsUserDetail {
+  id           String     @id @default(uuid()) @db.Uuid
+  client_id    String     @db.Uuid
+  demo_date    DateTime?
+  status       String
+  remarks      String?
+  demo_status  DemoStatus @default(PENDING)
+  admin_id     String?    @db.Uuid
+  remarks_log  Json?      @default("[]")
+  system_admin ImsUser?   @relation("AdminDetails", fields: [admin_id], references: [client_id])
+  user         ImsUser    @relation(fields: [client_id], references: [client_id])
+
+  @@index([client_id])
+}
+
+model License {
+  license_id     String   @id @default(uuid()) @db.Uuid
+  client_id      String   @db.Uuid
+  license_type   String
+  license_number String
+  expiry_date    DateTime
+  state          String
+  status         String
+  user           ImsUser  @relation(fields: [client_id], references: [client_id])
+}
+
+model Shipping {
+  shipping_id String  @id @default(uuid()) @db.Uuid
+  client_id   String  @db.Uuid
+  office_name String
+  address     String
+  city        String
+  state       String
+  zip_code    String
+  phone       String?
+  extension   String?
+  user        ImsUser @relation(fields: [client_id], references: [client_id])
+}
+
+model Billing {
+  billing_id               String   @id @default(uuid()) @db.Uuid
+  client_id                String   @db.Uuid
+  stripe_customer_id       String?
+  stripe_payment_method_id String?
+  card_brand               String?
+  encrypted_masked_card    String?
+  expiry_month             Int?
+  expiry_year              Int?
+  billing_address          String
+  created_at               DateTime @default(now())
+  user                     ImsUser  @relation(fields: [client_id], references: [client_id])
+}
+
+model Agreement {
+  agreement_id String          @id @default(uuid()) @db.Uuid
+  client_id    String          @db.Uuid
+  remarks      String?
+  updated_at   DateTime        @updatedAt
+  admin_id     String?         @db.Uuid
+  status       AgreementStatus @default(PENDING)
+  created_by   String?         @db.Uuid
+  signed_file  String?
+  system_admin ImsUser?        @relation("AdminAgreements", fields: [admin_id], references: [client_id])
+  user         ImsUser         @relation(fields: [client_id], references: [client_id])
+}
+
+model SubscriptionPlan {
+  subscription_plan_id       String               @id @default(uuid()) @db.Uuid
+  plan_name                  String
+  price                      Float
+  duration                   Int
+  description                String?
+  created_at                 DateTime             @default(now())
+  billing_cycle              String               @default("monthly")
+  features                   String[]             @default([])
+  is_active                  Boolean              @default(true)
+  user_limit                 Int?
+  annual_discount_percentage Float                @default(0)
+  clients                    ClientSubscription[]
+}
+
+model ClientSubscription {
+  client_id            String           @db.Uuid
+  subscription_plan_id String           @db.Uuid
+  start_date           DateTime
+  end_date             DateTime
+  final_amount         Float
+  payment_status       String
+  active               Boolean
+  discount_percentage  Float?           @default(0)
+  secure_link_expires  DateTime?
+  secure_link_token    String?          @unique
+  user                 ImsUser          @relation(fields: [client_id], references: [client_id])
+  plan                 SubscriptionPlan @relation(fields: [subscription_plan_id], references: [subscription_plan_id])
+
+  @@id([client_id, subscription_plan_id, start_date])
+}
+
+model Office {
+  office_id             String      @id @default(uuid()) @db.Uuid
+  client_id             String      @db.Uuid
+  office_name           String
+  address               String
+  created_at            DateTime    @default(now())
+  inventory             Inventory[]
+  user                  ImsUser     @relation(fields: [client_id], references: [client_id])
+  staff                 Staff[]
+  destination_transfers Transfer[]  @relation("TransferDestination")
+  source_transfers      Transfer[]  @relation("TransferSource")
+
+  @@unique([client_id, office_name])
+}
+
+model Staff {
+  staff_id        String      @id @default(uuid()) @db.Uuid
+  client_id       String?     @db.Uuid
+  first_name      String
+  last_name       String
+  email           String      @unique
+  phone           String?
+  address         String?
+  designation     String
+  created_at      DateTime    @default(now())
+  updated_at      DateTime    @updatedAt
+  officeOffice_id String?     @db.Uuid
+  inventory       Inventory[]
+  user            ImsUser?    @relation(fields: [client_id], references: [client_id])
+  office          Office?     @relation(fields: [officeOffice_id], references: [office_id])
+}
+
+/// UNIFIED PURCHASE/QUOTATION TABLES
+/// ----------------------
+model PurchaseOrder {
+  purchase_id      String                @id @default(uuid()) @db.Uuid
+  client_id        String                @db.Uuid
+  quotation_number String?
+  quotation_date   DateTime
+  valid_until      DateTime?
+  status           String
+  remarks          String?
+  is_quotation     Boolean               @default(true)
+  purchase_date    DateTime?
+  created_at       DateTime              @default(now())
+  updated_at       DateTime              @updatedAt
+  user             ImsUser               @relation(fields: [client_id], references: [client_id])
+  details          PurchaseOrderDetail[]
+  returns          PurchaseReturn[]
+}
+
+model PurchaseOrderDetail {
+  purchase_id String        @db.Uuid
+  productId   String
+  quantity    Int
+  unit_price  Float
+  description String?
+  product     Product       @relation(fields: [productId], references: [id])
+  purchase    PurchaseOrder @relation(fields: [purchase_id], references: [purchase_id])
+
+  @@id([purchase_id, productId])
+}
+
+/// ----------------------
+/// PURCHASE RETURN TABLES
+/// ----------------------
+model PurchaseReturn {
+  purchase_return_id String                 @id @default(uuid()) @db.Uuid
+  return_date        DateTime
+  purchase_id        String                 @db.Uuid
+  purchase           PurchaseOrder          @relation(fields: [purchase_id], references: [purchase_id])
+  details            PurchaseReturnDetail[]
+}
+
+model PurchaseReturnDetail {
+  purchase_return_id String         @db.Uuid
+  productId          String
+  quantity           Int
+  unit_price         Float
+  product            Product        @relation(fields: [productId], references: [id])
+  purchaseReturn     PurchaseReturn @relation(fields: [purchase_return_id], references: [purchase_return_id])
+
+  @@id([purchase_return_id, productId])
+}
+
+model Inventory {
+  id               String             @id @default(uuid()) @db.Uuid
+  transaction_type IMSTransactionType
+  staff_id         String             @db.Uuid
+  office_id        String             @db.Uuid
+  productId        String?
+  customProductId  String?            @db.Uuid
+  brand            String?
+  quantity         Int
+  batch_no         String?
+  expiry_date      DateTime?
+  unit_price       Float
+  room_number      String?
+  purpose          String?
+  status           IMSStatus
+  created_at       DateTime           @default(now())
+  office           Office             @relation(fields: [office_id], references: [office_id])
+  product          Product?           @relation(fields: [productId], references: [id])
+  customProduct    ImsCustomProduct?  @relation(fields: [customProductId], references: [id])
+  staff            Staff              @relation(fields: [staff_id], references: [staff_id])
+
+  @@index([customProductId])
+}
+
+model ImsCustomProduct {
+  id             String               @id @default(uuid()) @db.Uuid
+  client_id      String               @db.Uuid
+  name           String
+  data           Json?                @default("{}")
+  inventory_type ProductInventoryType @default(CONSUMABLE)
+  is_active      Boolean              @default(true)
+  created_at     DateTime             @default(now())
+  updated_at     DateTime             @updatedAt
+  user           ImsUser              @relation(fields: [client_id], references: [client_id], onDelete: Cascade)
+  inventoryItems Inventory[]
+
+  @@unique([client_id, name])
+  @@index([client_id])
+  @@map("ims_custom_products")
+}
+
+model Transfer {
+  id                    String           @id @default(uuid()) @db.Uuid
+  client_id             String           @db.Uuid
+  source_office_id      String           @db.Uuid
+  destination_office_id String           @db.Uuid
+  status                String
+  transfer_date         DateTime
+  created_at            DateTime         @default(now())
+  destination_office    Office           @relation("TransferDestination", fields: [destination_office_id], references: [office_id])
+  source_office         Office           @relation("TransferSource", fields: [source_office_id], references: [office_id])
+  details               TransferDetail[]
+}
+
+model TransferDetail {
+  transfer_id String   @db.Uuid
+  productId   String
+  qty         Int
+  product     Product  @relation(fields: [productId], references: [id])
+  transfer    Transfer @relation(fields: [transfer_id], references: [id], onDelete: Cascade)
+
+  @@id([transfer_id, productId])
+}
+
+model Quotation {
+  quotation_id String   @id @default(uuid()) @db.Uuid
+  client_id    String?  @db.Uuid
+  product_name String
+  product_type String
+  quantity     Int
+  budget       String?
+  description  String?
+  status       String   @default("Pending")
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  user         ImsUser? @relation(fields: [client_id], references: [client_id])
+}
+
+model SystemActivity {
+  activity_id String   @id @default(uuid()) @db.Uuid
+  action      String
+  product     String?
+  office      String?
+  user        String?
+  client_id   String?  @db.Uuid
+  created_at  DateTime @default(now())
+
+  @@index([created_at])
+}
+
+model ImsRole {
+  role_id     String              @id @default(uuid()) @db.Uuid
+  role_name   String
+  description String?
+  created_at  DateTime            @default(now())
+  client_id   String?             @db.Uuid
+  is_global   Boolean             @default(false)
+  permissions ImsRolePermission[]
+  staff       ImsStaffRole[]
+  users       ImsUserRole[]
+
+  @@unique([client_id, role_name])
+  @@map("ims_roles")
+}
+
+model ImsPermission {
+  permission_id String              @id @default(uuid()) @db.Uuid
+  name          String              @unique
+  module        String
+  created_at    DateTime            @default(now())
+  roles         ImsRolePermission[]
+
+  @@map("ims_permissions")
+}
+
+model ImsRolePermission {
+  role_id       String        @db.Uuid
+  permission_id String        @db.Uuid
+  permission    ImsPermission @relation(fields: [permission_id], references: [permission_id], onDelete: Cascade)
+  role          ImsRole       @relation(fields: [role_id], references: [role_id], onDelete: Cascade)
+
+  @@id([role_id, permission_id])
+  @@map("ims_role_permissions")
+}
+
+model ImsStaffRole {
+  staff_id String  @db.Uuid
+  role_id  String  @db.Uuid
+  role     ImsRole @relation(fields: [role_id], references: [role_id], onDelete: Cascade)
+
+  @@id([staff_id, role_id])
+  @@map("ims_staff_roles")
+}
+
+model ImsUserRole {
+  client_id   String   @db.Uuid
+  role_id     String   @db.Uuid
+  assigned_at DateTime @default(now())
+  user        ImsUser  @relation(fields: [client_id], references: [client_id], onDelete: Cascade)
+  role        ImsRole  @relation(fields: [role_id], references: [role_id], onDelete: Cascade)
+
+  @@id([client_id, role_id])
+  @@index([role_id])
+  @@map("ims_user_roles")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  user_id     String?  @db.Uuid
+  client_id   String?  @db.Uuid
+  action_type String
+  model_name  String
+  record_id   String?
+  timestamp   DateTime @default(now())
+  metadata    Json?
+  user        ImsUser? @relation(fields: [user_id], references: [client_id])
+
+  @@index([client_id])
+  @@index([model_name])
+  @@index([timestamp])
+  @@map("ims_audit_logs")
+}
+
+model Banner {
+  id        String   @id @default(uuid())
+  imageUrl  String
+  imageKey  String
+  alt       String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  linkUrl   String?
+  overlays  Json     @default("[]")
+}
+
+enum ProductInventoryType {
+  CONSUMABLE
+  EQUIPMENT
+}
+
+enum PromotionType {
+  FREE_SHIPPING
+  BUY_X_GET_Y
+  BUNDLE_DEALS // DEPRECATED — use BundleProduct system instead
+  SPEND_MONEY
+  PROMO_CODE
+}
+
+enum BundleStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  PAUSED
+}
+
+enum EligibleCustomerType {
+  ALL
+  ADD_CUSTOMER
+}
+
+enum CustomerType {
+  NEW
+  REPEATED
+  HIGH_SPEND
+  NEWS_LETTER
+}
+
+enum DeliveryOption {
+  STANDARD
+  PREMIUM
+  LUXURY
+  EXPRESS
+}
+
+enum DurationType {
+  LONG_TIME
+  SELECTED_TIME
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  DISPUTED
+  CANCELLED
+  REQUIRES_ACTION
+}
+
+enum Role {
+  VENDOR
+  ADMIN
+  SUPER_ADMIN
+  USER
+}
+
+enum Status {
+  ACTIVE
+  IN_ACTIVE
+}
+
+enum vendorStatus {
+  APPROVE
+  REJECT
+  BLOCK
+  RESUBMIT
+  PENDING
+}
+
+enum productStatus {
+  PENDING
+  REJECT
+  APPROVE
+}
+
+enum BussinessType {
+  HEALTH_CARE
+  NON_HEALTH_CARE
+}
+
+enum HealthCareBusinessType {
+  DENTAL_PRACTICE
+  EDUCATIONAL_OR_GOVERNMENT_DENTAL_FACILITY
+  DENTAL_SERVICE
+  OTHERS
+}
+
+enum Speciality {
+  GENERAL_DENTISTRY
+  ORTHODONTICS
+  ORAL_SURGERY
+  PERIODONTICS
+  ENDODONTICS
+  PROSTHODONTICS
+  PEDODONTICS
+}
+
+enum VendorBusinessType {
+  INDIVIDUAL_PROFILE
+  BUSINESS_PROFILE
+}
+
+enum ReturnOrderStatus {
+  RETURNED
+}
+
+enum OrderStatus {
+  PLACED
+  PACKED
+  INPROGRESS
+  SHIPPED
+  DELIVERED
+  RETURNED
+  CANCELED
+}
+
+enum OrderRemarks {
+  REQUEST_INITIATED
+  REACHED_WAREHOUSE
+  QUALITY_CHECK
+  RETURN_RESULT
+  REFUND_PENDING
+  REFUND_ISSUED
+}
+
+enum CancelOrderStatus {
+  CANCELED
+  REFUND_PENDING
+  REFUND_ISSUED
+}
+
+enum PayStatus {
+  PLACED
+  INPROGRESS
+  PACKED
+  SHIPPED
+  DELIVERED
+}
+
+enum CommissionType {
+  SOLD_ITEM
+  WHOLE_ORDER
+}
+
+enum TransactionType {
+  SALE
+  RETURNED
+  REFUND
+  REFUND_PENDING
+  RETURN_PENDING
+}
+
+enum VendorTransfersStatus {
+  PENDING
+  REVERSED
+  COMPLETED
+  REJECTED
+  INSUFFICIENT_FUNDS
+}
+
+enum ShippingMethod {
+  FLAT
+  UPS
+}
+
+enum IMSTransactionType {
+  IN
+  OUT
+  TRANSFER
+  ADJUSTMENT
+}
+
+enum ReferenceType {
+  PURCHASE
+  SALE
+  TRANSFER
+  RETURN
+  OPENING
+}
+
+enum IMSStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+  CANCELLED
+}
+
+enum DemoStatus {
+  PENDING
+  SCHEDULED
+  SUCCESSFUL
+  FAILED
+  CANCELLED
+  RESCHEDULED
+}
+
+enum AgreementStatus {
+  PENDING
+  SENT
+  SIGNED
+  REJECTED
+}
